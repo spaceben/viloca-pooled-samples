@@ -1,0 +1,11 @@
+rule pooled:
+    output:
+        "results/sample0.fasta",
+        "results/sample1.fasta",
+        "results/sample2.fasta",
+        "results/ground_truth.csv",
+        "results/MasterSequence.fasta"
+    conda:
+        "envs/pooled.yaml"
+    script:
+        "scripts/script.R"

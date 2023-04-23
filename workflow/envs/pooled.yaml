@@ -1,0 +1,9 @@
+channels:
+  - bioconda
+  - conda-forge
+  - nodefaults
+dependencies:
+  - r-base =4.2
+  - bioconductor-qsutils =1.16.0
+  - r-seqinr =4.2_30
+  - r-extradistr =1.9.1

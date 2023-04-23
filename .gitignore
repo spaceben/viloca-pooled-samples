@@ -1,0 +1,5 @@
+.snakemake
+.RData
+.Rhistory
+results/*
+!results/.gitkeep
