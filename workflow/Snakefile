@@ -1,4 +1,4 @@
-rule pooled:
+rule simulate_haplos:
     output:
         "results/sample0.fasta",
         "results/sample1.fasta",
@@ -6,6 +6,30 @@ rule pooled:
         "results/ground_truth.csv",
         "results/MasterSequence.fasta"
     conda:
-        "envs/pooled.yaml"
+        "envs/simulate_haplos.yaml"
     script:
         "scripts/script.R"
+
+rule simulate_reads:
+    input:
+        "results/{sample}.fasta"
+    output:
+        "results/{sample}.sam",
+        "results/{sample}1.aln",
+        "results/{sample}1.fq",
+        "results/{sample}2.aln",
+        "results/{sample}2.fq"
+    wildcard_constraints:
+        sample="^sample\d+$"
+    conda:
+        "envs/simulate_reads.yaml"
+    shell:
+        # https://github.com/cbg-ethz/V-pipe/blob/8c4599509955b33f761ded2889d68777628a4f12/resources/auxiliary_workflows/benchmark/workflow/scripts/shotgun_simulation.py#L16
+        # TODO -m read_length * 2 * 0.8
+        "art_illumina -sam --paired -m 320 -s 10 --rndSeed 20 -i {input} -f 100 -l 200 -o {wildcards.sample}"
+
+rule merge_sams:
+
+rule run_vilca:
+
+rule benchmark:
