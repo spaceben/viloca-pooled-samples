@@ -5,6 +5,7 @@ library(extraDistr)
 
 len = 300
 set.seed(23)
+dir = "results/haplos/"
 
 m1 <- GetRandomSeq(len)
 write.fasta(as.list(m1), names="MasterSequence", as.string=FALSE,
@@ -19,9 +20,11 @@ to_file <- function(haplos, freq, id) {
     names <- c()
     for (i in 1:length(haplos)) {
         names[i] = paste0("haplo", i-1, " freq:", freq[i] / sum(freq))
+        write.fasta(as.list(haplos[i]), names=as.list(names[i]), as.string=FALSE,
+                file.out=paste0(dir,id,"-",i,".fasta"), open="w")
     }
-    write.fasta(as.list(haplos), names=names, as.string=FALSE,
-                file.out=paste0("results/",id,".fasta"))
+    # write.fasta(as.list(haplos), names=names, as.string=FALSE,
+    #             file.out=paste0(dir,id,".fasta")) # TODO
 }
 
 to_file(c(m1, v1), w1, "sample0")
@@ -42,26 +45,32 @@ to_file(s3[[1]], s3[[2]], "sample2")
 
 #data.frame(Hpl=DottedAlignment(s3[[1]]),Freq=s3[[2]])
 
-df <- setNames(data.frame(matrix(nrow = 0, ncol = 6)),
-               c("", "type", "position", "variant", "haplotype", "frequency"))
-counter <- 1
-i_idx <- 0
-for (i in DottedAlignment(s3[[1]])) {
-    if (i_idx == 0) {
-        i_idx <- i_idx + 1
-        next
-    }
-    j_idx <- 0 # TODO check if 0 based
-    for (j in strsplit(i, "")[[1]]) {
-        if (j != ".") {
-            df[counter,] <- c(counter-1, "mutation", j_idx, j,
-                              paste0("haplo", i_idx),
-                              s3[[2]][i_idx+1] / sum(s3[[2]]))
-            counter <- counter + 1
+create_ground_truth <- function(gen, name) {
+    df <- setNames(data.frame(matrix(nrow = 0, ncol = 6)),
+                c("", "type", "position", "variant", "haplotype", "frequency"))
+    counter <- 1
+    i_idx <- 0
+    for (i in DottedAlignment(gen[[1]])) {
+        if (i_idx == 0) {
+            i_idx <- i_idx + 1
+            next
         }
-        j_idx <- j_idx + 1
+        j_idx <- 0
+        for (j in strsplit(i, "")[[1]]) {
+            if (j != ".") {
+                df[counter,] <- c(counter-1, "mutation", j_idx, j,
+                                paste0("haplo", i_idx),
+                                gen[[2]][i_idx+1] / sum(gen[[2]]))
+                counter <- counter + 1
+            }
+            j_idx <- j_idx + 1
+        }
+        i_idx <- i_idx + 1
     }
-    i_idx <- i_idx + 1
+
+    write.csv(df, paste0("results/ground_truth", name, ".csv"), quote = FALSE, row.names = FALSE)
 }
 
-write.csv(df, "results/ground_truth.csv", quote = FALSE, row.names = FALSE)
+create_ground_truth(list(c(m1, v1), w1), "_sample0")
+create_ground_truth(s2, "_sample1")
+create_ground_truth(s3, "_sample2")

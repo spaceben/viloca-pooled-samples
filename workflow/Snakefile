@@ -1,9 +1,14 @@
+SAMPLES = [0, 1, 2]
+
+rule all:
+    input:
+        expand("results/viloca_{mode}/snv/SNVs_0.010000_final.vcf", mode=["classic"]) # TODO "pooled",
+
 rule simulate_haplos:
     output:
-        "results/sample0.fasta",
-        "results/sample1.fasta",
-        "results/sample2.fasta",
-        "results/ground_truth.csv",
+        directory("results/haplos"),
+        "results/haplos/sample0-1.fasta", # just to make sure dir is created
+        expand("results/ground_truth_sample{id}.csv", id=SAMPLES),
         "results/MasterSequence.fasta"
     conda:
         "envs/simulate_haplos.yaml"
@@ -11,25 +16,35 @@ rule simulate_haplos:
         "scripts/script.R"
 
 rule simulate_reads:
+    params:
+        coverage=1000
     input:
-        "results/{sample}.fasta"
+        fin="results/haplos"
     output:
-        "results/{sample}.sam",
-        "results/{sample}1.aln",
-        "results/{sample}1.fq",
-        "results/{sample}2.aln",
-        "results/{sample}2.fq"
-    wildcard_constraints:
-        sample="^sample\d+$"
+        "results/alignments/sample0.bam", # just to make sure dir is created
+        out=directory("results/alignments"),
+        bam=expand("results/alignments/sample{id}.bam", id=SAMPLES),
+        bai=expand("results/alignments/sample{id}.bam.bai", id=SAMPLES),
+        merged_bam="results/alignments/merged.bam",
+        merged_bai="results/alignments/merged.bam.bai"
     conda:
         "envs/simulate_reads.yaml"
-    shell:
-        # https://github.com/cbg-ethz/V-pipe/blob/8c4599509955b33f761ded2889d68777628a4f12/resources/auxiliary_workflows/benchmark/workflow/scripts/shotgun_simulation.py#L16
-        # TODO -m read_length * 2 * 0.8
-        "art_illumina -sam --paired -m 320 -s 10 --rndSeed 20 -i {input} -f 100 -l 200 -o {wildcards.sample}"
+    script:
+        "scripts/simulate_reads.py"
 
-rule merge_sams:
+rule run_viloca:
+    input:
+        ref="results/MasterSequence.fasta",
+        bam=expand("results/alignments/sample{id}.bam", id=SAMPLES),
+        bai=expand("results/alignments/sample{id}.bam.bai", id=SAMPLES),
+        merged_bam="results/alignments/merged.bam"
+    output:
+        "results/viloca_{mode}/snv/SNVs_0.010000_final.vcf"
+    conda:
+        "envs/run_viloca.yaml"
+    benchmark:
+        "results/benchmark_{mode}.tsv"
+    script:
+        "scripts/run_viloca.py"
 
-rule run_vilca:
-
-rule benchmark:
+# # rule benchmark:
