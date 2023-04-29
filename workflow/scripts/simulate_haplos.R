@@ -3,9 +3,9 @@ library(QSutils)
 library(seqinr)
 library(extraDistr)
 
-len = 300
+len <- snakemake@params[["len"]]
 set.seed(23)
-dir = "results/haplos/"
+dir <- "results/haplos/"
 
 m1 <- GetRandomSeq(len)
 write.fasta(as.list(m1), names="MasterSequence", as.string=FALSE,

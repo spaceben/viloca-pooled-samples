@@ -1,10 +1,13 @@
 SAMPLES = [0, 1, 2]
+MODES = ["classic"] # TODO "pooled",
 
 rule all:
     input:
-        expand("results/viloca_{mode}/snv/SNVs_0.010000_final.vcf", mode=["classic"]) # TODO "pooled",
+        expand("results/viloca_{mode}/snv/SNVs_0.010000_final.vcf", mode=MODES)
 
 rule simulate_haplos:
+    params:
+        len=30
     output:
         directory("results/haplos"),
         "results/haplos/sample0-1.fasta", # just to make sure dir is created
@@ -13,7 +16,7 @@ rule simulate_haplos:
     conda:
         "envs/simulate_haplos.yaml"
     script:
-        "scripts/script.R"
+        "scripts/simulate_haplos.R"
 
 rule simulate_reads:
     params:
@@ -47,4 +50,14 @@ rule run_viloca:
     script:
         "scripts/run_viloca.py"
 
-# # rule benchmark:
+rule benchmark:
+    input:
+        vcf_list=expand("results/viloca_{mode}/snv/SNVs_0.010000_final.vcf", mode=MODES), # TODO this file correct? replicates necessary?
+        groundtruth_list=expand("results/ground_truth.csv"), # TODO which gt to use?
+        benchmark_list=expand("results/benchmark_{mode}.tsv", mode=MODES)
+    output:
+        dname_out=directory("results/benchmark/"),
+    conda:
+        "envs/benchmark.yaml"
+    script:
+        "scripts/benchmark.py"
