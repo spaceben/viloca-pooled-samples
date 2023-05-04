@@ -1,13 +1,13 @@
 SAMPLES = [0, 1, 2]
-MODES = ["classic"] # TODO "pooled",
+RUNS = ["classic_0", "classic_1", "classic_2", "pooled"]
 
 rule all:
     input:
-        expand("results/viloca_{mode}/snv/SNVs_0.010000_final.vcf", mode=MODES)
+        expand("results/viloca_{run}/snv/SNVs_0.010000_final.vcf", run=RUNS)
 
 rule simulate_haplos:
     params:
-        len=30
+        len=500
     output:
         directory("results/haplos"),
         "results/haplos/sample0-1.fasta", # just to make sure dir is created
@@ -39,24 +39,23 @@ rule run_viloca:
     input:
         ref="results/MasterSequence.fasta",
         bam=expand("results/alignments/sample{id}.bam", id=SAMPLES),
-        bai=expand("results/alignments/sample{id}.bam.bai", id=SAMPLES),
-        merged_bam="results/alignments/merged.bam"
+        bai=expand("results/alignments/sample{id}.bam.bai", id=SAMPLES)
     output:
-        "results/viloca_{mode}/snv/SNVs_0.010000_final.vcf"
+        "results/viloca_{run}/snv/SNVs_0.010000_final.vcf"
     conda:
         "envs/run_viloca.yaml"
     benchmark:
-        "results/benchmark_{mode}.tsv"
+        "results/benchmark_{run}.tsv"
     script:
         "scripts/run_viloca.py"
 
 rule benchmark:
     input:
-        vcf_list=expand("results/viloca_{mode}/snv/SNVs_0.010000_final.vcf", mode=MODES), # TODO this file correct? replicates necessary?
-        groundtruth_list=expand("results/ground_truth.csv"), # TODO which gt to use?
-        benchmark_list=expand("results/benchmark_{mode}.tsv", mode=MODES)
+        vcf_list=[f"results/viloca_classic_{id}/snv/SNVs_0.010000_final.vcf" for id in SAMPLES] + [f"results/viloca_pooled/sample{id}/snv/SNVs_0.010000_final.vcf" for id in SAMPLES],
+        groundtruth_list=[f"results/ground_truth_sample{id}.csv" for _ in range(2) for id in SAMPLES],
+        benchmark_list=[f"results/benchmark_{run}.tsv" for run in RUNS] + [f"results/benchmark_{RUNS[3]}.tsv" for _ in range(2)]
     output:
-        dname_out=directory("results/benchmark/"),
+        dname_out=directory("results/benchmark/")
     conda:
         "envs/benchmark.yaml"
     script:

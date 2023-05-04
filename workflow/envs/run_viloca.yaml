@@ -7,4 +7,4 @@ dependencies:
  - python=3.10
  - pip
  - pip:
-   - git+https://github.com/LaraFuhrmann/VILOCA@master
+   - git+https://github.com/LaraFuhrmann/VILOCA@feat-wp2
