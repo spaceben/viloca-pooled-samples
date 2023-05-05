@@ -3,11 +3,11 @@ RUNS = ["classic_0", "classic_1", "classic_2", "pooled"]
 
 rule all:
     input:
-        expand("results/viloca_{run}/snv/SNVs_0.010000_final.vcf", run=RUNS)
+        "results/benchmark/"
 
 rule simulate_haplos:
     params:
-        len=500
+        len=230
     output:
         directory("results/haplos"),
         "results/haplos/sample0-1.fasta", # just to make sure dir is created
@@ -35,11 +35,18 @@ rule simulate_reads:
     script:
         "scripts/simulate_reads.py"
 
-rule run_viloca:
+rule gen_bed_file:
+    output:
+        "results/insert.bed"
+    shell:
+        "echo 'MasterSequence 1 201 scheme_INSERT_1 1   +' > results/insert.bed"
+
+rule run_viloca_classic:
     input:
         ref="results/MasterSequence.fasta",
         bam=expand("results/alignments/sample{id}.bam", id=SAMPLES),
-        bai=expand("results/alignments/sample{id}.bam.bai", id=SAMPLES)
+        bai=expand("results/alignments/sample{id}.bam.bai", id=SAMPLES),
+        bed="results/insert.bed"
     output:
         "results/viloca_{run}/snv/SNVs_0.010000_final.vcf"
     conda:
@@ -49,9 +56,24 @@ rule run_viloca:
     script:
         "scripts/run_viloca.py"
 
+rule run_viloca_pooled:
+    input:
+        ref="results/MasterSequence.fasta",
+        bam=expand("results/alignments/sample{id}.bam", id=SAMPLES),
+        bai=expand("results/alignments/sample{id}.bam.bai", id=SAMPLES),
+        bed="results/insert.bed"
+    output:
+        expand("results/viloca_pooled/sample{id}/SNVs_0.010000_final.vcf", id=SAMPLES)
+    conda:
+        "envs/run_viloca.yaml"
+    benchmark:
+        "results/benchmark_pooled.tsv"
+    script:
+        "scripts/run_viloca.py"
+
 rule benchmark:
     input:
-        vcf_list=[f"results/viloca_classic_{id}/snv/SNVs_0.010000_final.vcf" for id in SAMPLES] + [f"results/viloca_pooled/sample{id}/snv/SNVs_0.010000_final.vcf" for id in SAMPLES],
+        vcf_list=[f"results/viloca_classic_{id}/snv/SNVs_0.010000_final.vcf" for id in SAMPLES] + [f"results/viloca_pooled/sample{id}/SNVs_0.010000_final.vcf" for id in SAMPLES],
         groundtruth_list=[f"results/ground_truth_sample{id}.csv" for _ in range(2) for id in SAMPLES],
         benchmark_list=[f"results/benchmark_{run}.tsv" for run in RUNS] + [f"results/benchmark_{RUNS[3]}.tsv" for _ in range(2)]
     output:
