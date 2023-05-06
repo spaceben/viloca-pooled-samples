@@ -95,7 +95,7 @@ def performance_plots(vcf_list, groundtruth_list, dname_out):
                 "method": method,
                 "replicate": replicate,
                 "sample": sample,
-                "precision": precision,
+                #"precision": precision,
                 "recall": recall,
                 "f1": f1,
             }
@@ -114,7 +114,8 @@ def performance_plots(vcf_list, groundtruth_list, dname_out):
         col="variable",
         kind="box",
     )
-    #g.set(ylim=(0, 1))
+    sns.move_legend(g, "lower center", bbox_to_anchor=(.5, 1), ncol=2, title=None, frameon=False)
+    #g.set(xlim=(0.2, 1))
     g.savefig(dname_out / "performance_boxplot.pdf")
 
 

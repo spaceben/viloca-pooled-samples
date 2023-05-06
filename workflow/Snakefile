@@ -1,6 +1,6 @@
 SAMPLES = list(range(3))
 RUNS = ["classic_0", "classic_1", "classic_2", "pooled"]
-REPLICATES = list(range(2))
+REPLICATES = list(range(25))
 
 # rule all:
 #     input:
