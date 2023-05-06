@@ -75,8 +75,7 @@ def compute_performance(true_variants, predicted_variants):
 
 
 def performance_plots(vcf_list, groundtruth_list, dname_out):
-    print(vcf_list)
-    print(groundtruth_list)
+
     # compute performance
     tmp = []
     for fname_vcf, fname_groundtruth in zip(vcf_list, groundtruth_list):
@@ -89,9 +88,6 @@ def performance_plots(vcf_list, groundtruth_list, dname_out):
 
         true_variants = convert_groundtruth(fname_groundtruth)
         predicted_variants = convert_vcf(fname_vcf)
-
-        print(true_variants)
-        print(predicted_variants)
 
         precision, recall, f1 = compute_performance(true_variants, predicted_variants)
 

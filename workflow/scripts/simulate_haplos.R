@@ -5,7 +5,7 @@ library(seqinr)
 library(extraDistr)
 
 len <- snakemake@params[["len"]]
-set.seed(23)
+set.seed(21)
 dir <- "results/haplos/"
 
 m1 <- GetRandomSeq(len)
@@ -14,7 +14,7 @@ write.fasta(as.list(m1), names="MasterSequence", as.string=FALSE,
 n <- 5
 v1 <- GenerateVars(m1, n-1, round(0.2*len),
                    ddnorm(1:round(0.2*len), round(0.1*len), round(0.03*len)))
-w1 <- fn.ab(n,fn="pcf",r=4)
+w1 <- fn.ab(n,fn="pcf",r=3.5)
 
 to_file <- function(haplos, freq, id) {
     stopifnot(length(haplos) == length(freq))
@@ -34,7 +34,7 @@ create_another_generation <- function(haplos, freq) {
     n2 = 5
     idx <- sample(1:length(haplos), 1, prob=freq/sum(freq))
     p2 <- Diverge(round(0.15*len):(round(0.15*len)+n2-1), haplos[idx]) # TODO
-    w2 <- fn.ab(n2,fn="pcf",r=4)
+    w2 <- fn.ab(n2,fn="pcf",r=1.5)
     return(list(c(haplos, p2), c(freq, w2)))
 }
 
