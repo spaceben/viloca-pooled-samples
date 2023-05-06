@@ -12,10 +12,10 @@ def main(fin, coverage, out_dir, out_bams, merged_bam):
     for i in glob.glob(path.join(fin, "*.fasta")):
         with open(i, "r") as f:
             freq = float(f.readline().split(":")[1])
-        subprocess.run(f"art_illumina -sam --paired -m 320 -s 10 --rndSeed 20 \
+        subprocess.run(f"art_illumina -sam --paired -m 320 -s 10 \
                         -i {i} -f {str(round(coverage * freq))} -l 200 -na \
                         -o {i.split('.fasta')[0]} -q", shell=True, check=True,
-                        capture_output=True)
+                        capture_output=True) # --rndSeed 20
 
     all_generated_sams = glob.glob(path.join(fin, "*.sam"))
     for i in all_generated_sams:

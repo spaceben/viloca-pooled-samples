@@ -5,12 +5,13 @@ library(seqinr)
 library(extraDistr)
 
 len <- snakemake@params[["len"]]
-set.seed(21)
-dir <- "results/haplos/"
+replicate <- snakemake@wildcards[["replicate"]]
+#set.seed(21)
+dir <- paste0("results/", replicate, "/haplos/")
 
 m1 <- GetRandomSeq(len)
 write.fasta(as.list(m1), names="MasterSequence", as.string=FALSE,
-            file.out=paste0("results/MasterSequence.fasta"))
+            file.out=paste0("results/", replicate, "/MasterSequence.fasta"))
 n <- 5
 v1 <- GenerateVars(m1, n-1, round(0.2*len),
                    ddnorm(1:round(0.2*len), round(0.1*len), round(0.03*len)))
@@ -69,7 +70,8 @@ create_ground_truth <- function(gen, name) {
         i_idx <- i_idx + 1
     }
 
-    write.csv(df, paste0("results/ground_truth", name, ".csv"), quote = FALSE, row.names = FALSE)
+    write.csv(df, paste0("results/", replicate, "/ground_truth", name, ".csv"),
+              quote = FALSE, row.names = FALSE)
 }
 
 create_ground_truth(list(c(m1, v1), w1), "_sample0")

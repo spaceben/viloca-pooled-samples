@@ -1,81 +1,85 @@
-SAMPLES = [0, 1, 2]
+SAMPLES = list(range(3))
 RUNS = ["classic_0", "classic_1", "classic_2", "pooled"]
+REPLICATES = list(range(2))
 
-rule all:
-    input:
-        "results/benchmark/"
+# rule all:
+#     input:
+#         "results/benchmark/"
 
-rule simulate_haplos:
-    params:
-        len=230
-    output:
-        directory("results/haplos"),
-        "results/haplos/sample0-1.fasta", # just to make sure dir is created
-        expand("results/ground_truth_sample{id}.csv", id=SAMPLES),
-        "results/MasterSequence.fasta"
-    conda:
-        "envs/simulate_haplos.yaml"
-    script:
-        "scripts/simulate_haplos.R"
+# rule simulate_haplos:
+#     params:
+#         len=230
+#     output:
+#         directory("results/{replicate}/haplos"),
+#         "results/{replicate}/haplos/sample0-1.fasta", # just to make sure dir is created
+#         expand("results/{{replicate}}/ground_truth_sample{id}.csv", id=SAMPLES),
+#         "results/{replicate}/MasterSequence.fasta"
+#     conda:
+#         "envs/simulate_haplos.yaml"
+#     script:
+#         "scripts/simulate_haplos.R"
 
-rule simulate_reads:
-    params:
-        coverage=1000
-    input:
-        fin="results/haplos"
-    output:
-        "results/alignments/sample0.bam", # just to make sure dir is created
-        out=directory("results/alignments"),
-        bam=expand("results/alignments/sample{id}.bam", id=SAMPLES),
-        bai=expand("results/alignments/sample{id}.bam.bai", id=SAMPLES),
-        merged_bam="results/alignments/merged.bam",
-        merged_bai="results/alignments/merged.bam.bai"
-    conda:
-        "envs/simulate_reads.yaml"
-    script:
-        "scripts/simulate_reads.py"
+# rule simulate_reads:
+#     params:
+#         coverage=1000
+#     input:
+#         fin="results/{replicate}/haplos"
+#     output:
+#         "results/{replicate}/alignments/sample0.bam", # just to make sure dir is created
+#         out=directory("results/{replicate}/alignments"),
+#         bam=expand("results/{{replicate}}/alignments/sample{id}.bam", id=SAMPLES),
+#         bai=expand("results/{{replicate}}/alignments/sample{id}.bam.bai", id=SAMPLES),
+#         merged_bam="results/{replicate}/alignments/merged.bam",
+#         merged_bai="results/{replicate}/alignments/merged.bam.bai"
+#     conda:
+#         "envs/simulate_reads.yaml"
+#     script:
+#         "scripts/simulate_reads.py"
 
-rule gen_bed_file:
-    output:
-        "results/insert.bed"
-    shell:
-        "echo 'MasterSequence 1 201 scheme_INSERT_1 1   +' > results/insert.bed"
+# rule gen_bed_file:
+#     output:
+#         "results/insert.bed"
+#     shell:
+#         "echo 'MasterSequence 1 201 scheme_INSERT_1 1   +' > results/insert.bed"
 
-rule run_viloca_classic:
-    input:
-        ref="results/MasterSequence.fasta",
-        bam=expand("results/alignments/sample{id}.bam", id=SAMPLES),
-        bai=expand("results/alignments/sample{id}.bam.bai", id=SAMPLES),
-        bed="results/insert.bed"
-    output:
-        "results/viloca_{run}/snv/SNVs_0.010000_final.vcf"
-    conda:
-        "envs/run_viloca.yaml"
-    benchmark:
-        "results/benchmark_{run}.tsv"
-    script:
-        "scripts/run_viloca.py"
+# rule run_viloca_classic:
+#     input:
+#         ref="results/{replicate}/MasterSequence.fasta",
+#         bam=expand("results/{{replicate}}/alignments/sample{id}.bam", id=SAMPLES),
+#         bai=expand("results/{{replicate}}/alignments/sample{id}.bam.bai", id=SAMPLES),
+#         bed="results/insert.bed"
+#     output:
+#         "results/{replicate}/viloca_{run}/snv/SNVs_0.010000_final.vcf"
+#     conda:
+#         "envs/run_viloca.yaml"
+#     benchmark:
+#         "results/{replicate}/benchmark_{run}.tsv"
+#     script:
+#         "scripts/run_viloca.py"
 
-rule run_viloca_pooled:
-    input:
-        ref="results/MasterSequence.fasta",
-        bam=expand("results/alignments/sample{id}.bam", id=SAMPLES),
-        bai=expand("results/alignments/sample{id}.bam.bai", id=SAMPLES),
-        bed="results/insert.bed"
-    output:
-        expand("results/viloca_pooled/sample{id}/SNVs_0.010000_final.vcf", id=SAMPLES)
-    conda:
-        "envs/run_viloca.yaml"
-    benchmark:
-        "results/benchmark_pooled.tsv"
-    script:
-        "scripts/run_viloca.py"
+# rule run_viloca_pooled:
+#     input:
+#         ref="results/{replicate}/MasterSequence.fasta",
+#         bam=expand("results/{{replicate}}/alignments/sample{id}.bam", id=SAMPLES),
+#         bai=expand("results/{{replicate}}/alignments/sample{id}.bam.bai", id=SAMPLES),
+#         bed="results/insert.bed"
+#     output:
+#         expand("results/{{replicate}}/viloca_pooled/sample{id}/SNVs_0.010000_final.vcf", id=SAMPLES)
+#     conda:
+#         "envs/run_viloca.yaml"
+#     benchmark:
+#         "results/{replicate}/benchmark_pooled.tsv"
+#     script:
+#         "scripts/run_viloca.py"
 
 rule benchmark:
     input:
-        vcf_list=[f"results/viloca_classic_{id}/snv/SNVs_0.010000_final.vcf" for id in SAMPLES] + [f"results/viloca_pooled/sample{id}/SNVs_0.010000_final.vcf" for id in SAMPLES],
-        groundtruth_list=[f"results/ground_truth_sample{id}.csv" for _ in range(2) for id in SAMPLES],
-        benchmark_list=[f"results/benchmark_{run}.tsv" for run in RUNS] + [f"results/benchmark_{RUNS[3]}.tsv" for _ in range(2)]
+        vcf_list=sum([
+            [f"results/{replicate}/viloca_classic_{id}/snv/SNVs_0.010000_final.vcf" for id in SAMPLES] +
+            [f"results/{replicate}/viloca_pooled/sample{id}/SNVs_0.010000_final.vcf" for id in SAMPLES] for replicate in REPLICATES ],
+        []),
+        groundtruth_list=[f"results/{replicate}/ground_truth_sample{id}.csv" for replicate in REPLICATES for _ in range(2) for id in SAMPLES],
+        #benchmark_list=[f"results/benchmark_{run}.tsv" for run in RUNS] + [f"results/benchmark_{RUNS[3]}.tsv" for _ in range(2)]
     output:
         dname_out=directory("results/benchmark/")
     conda:

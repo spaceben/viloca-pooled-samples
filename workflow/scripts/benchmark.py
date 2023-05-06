@@ -79,12 +79,11 @@ def performance_plots(vcf_list, groundtruth_list, dname_out):
     # compute performance
     tmp = []
     for fname_vcf, fname_groundtruth in zip(vcf_list, groundtruth_list):
-        # parts = str(fname_vcf).split("/")
-
-        # if len(parts) == 7:
-        #     _, _, params, method, _, replicate, _ = parts
-        # elif len(parts) == 8:  # for multi workflow
-        #     _, _, _, params, method, _, replicate, _ = parts
+        parts = str(fname_vcf).split("/")
+        _, replicate, method, sample, _ = parts
+        if method.startswith("viloca_classic_"):
+            sample = "sample" + method.split("_")[-1]
+            method = "viloca_classic"
 
         true_variants = convert_groundtruth(fname_groundtruth)
         predicted_variants = convert_vcf(fname_vcf)
@@ -93,9 +92,9 @@ def performance_plots(vcf_list, groundtruth_list, dname_out):
 
         tmp.append(
             {
-                "method": fname_vcf,
-                # "params": params,
-                # "replicate": replicate,
+                "method": method,
+                "replicate": replicate,
+                "sample": sample,
                 "precision": precision,
                 "recall": recall,
                 "f1": f1,
@@ -103,24 +102,20 @@ def performance_plots(vcf_list, groundtruth_list, dname_out):
         )
     df_perf = pd.DataFrame(tmp)
 
-    print(df_perf)
+    # plot overview
+    df_long = pd.melt(df_perf, id_vars=["method", "replicate", "sample"]).assign()
+    df_long.to_csv(dname_out / "performance.csv")
 
-    # # plot overview
-    # df_long = pd.melt(df_perf, id_vars=["method", "params", "replicate"]).assign(
-    #     params=lambda x: x["params"].str.replace("_", "\n")
-    # )
-    # df_long.to_csv(dname_out / "performance.csv")
-
-    # g = sns.catplot(
-    #     data=df_long,
-    #     x="params",
-    #     y="value",
-    #     hue="method",
-    #     col="variable",
-    #     kind="box",
-    # )
-    # g.set(ylim=(0, 1))
-    # g.savefig(dname_out / "performance_boxplot.pdf")
+    g = sns.catplot(
+        data=df_long,
+        x="value",
+        y="sample",
+        hue="method",
+        col="variable",
+        kind="box",
+    )
+    #g.set(ylim=(0, 1))
+    g.savefig(dname_out / "performance_boxplot.pdf")
 
 
 def runtime_plots(benchmark_list, dname_out):
@@ -164,7 +159,7 @@ def runtime_plots(benchmark_list, dname_out):
     g.savefig(dname_out / "runtime_boxplot.pdf")
 
 
-def main(vcf_list, groundtruth_list, benchmark_list, dname_out):
+def main(vcf_list, groundtruth_list, dname_out):
     dname_out.mkdir(parents=True)
 
     performance_plots(vcf_list, groundtruth_list, dname_out)
@@ -175,6 +170,6 @@ if __name__ == "__main__":
     main(
         [Path(e) for e in snakemake.input.vcf_list],
         [Path(e) for e in snakemake.input.groundtruth_list],
-        [Path(e) for e in snakemake.input.benchmark_list],
+        #[Path(e) for e in snakemake.input.benchmark_list],
         Path(snakemake.output.dname_out),
     )
